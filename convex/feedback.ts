@@ -52,26 +52,25 @@ Provide coaching feedback for this exercise attempt.`;
 
     let feedbackText: string;
 
-    const apiKey = (globalThis as any).process?.env?.LLM_API_KEY as string | undefined;
+    const apiKey = (globalThis as any).process?.env?.GEMINI_API_KEY as string | undefined;
     if (apiKey) {
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": apiKey,
-          "anthropic-version": "2023-06-01",
-        },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 200,
-          system: SYSTEM_PROMPT,
-          messages: [{ role: "user", content: userPrompt }],
-        }),
-      });
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+            contents: [{ parts: [{ text: userPrompt }] }],
+            generationConfig: { maxOutputTokens: 200 },
+          }),
+        }
+      );
 
       const data = await response.json();
       feedbackText =
-        data.content?.[0]?.text ?? "Great effort! Keep practicing.";
+        data.candidates?.[0]?.content?.parts?.[0]?.text ??
+        "Great effort! Keep practicing.";
     } else {
       feedbackText = generateFallbackFeedback(audioMetrics, videoMetrics);
     }
